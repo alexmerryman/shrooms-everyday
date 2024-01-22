@@ -1,4 +1,6 @@
+# shrooms-everyday-global
 import datetime
+import pytz
 import os
 import random
 from pathlib import Path
@@ -8,9 +10,6 @@ import boto3
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[0]
-
-
-# todo make a Colorado Mushroom of the Day bot
 
 
 def get_inat_observation() -> dict:
@@ -63,7 +62,6 @@ def get_obs_attributes(obs_json: dict) -> dict:
     obs_formatted['wikipedia_url'] = obs_json.get('taxon').get('wikipedia_url')
     obs_formatted['inat_uri'] = obs_json.get('uri')
     obs_formatted['place_guess'] = obs_json.get('place_guess')
-    obs_formatted['photo_url'] = obs_json.get('photos')[0].get('url')  # todo post all photos, not just the first one
     obs_formatted['inat_username'] = obs_json.get('user').get('login')
     obs_formatted['inat_user_id'] = obs_json.get('user').get('id')
     obs_formatted['inat_user_uri'] = f"https://www.inaturalist.org/people/{obs_json.get('user').get('id')}"
@@ -92,7 +90,30 @@ def format_tweet_text(obs_formatted: dict):
     else:
         common_name = f" ({obs_formatted['preferred_common_name']})"
 
-    tweet = f"""Today's Mushroom of the Day is this {obs_formatted['taxon_name']}{common_name}, observed by iNat user @/{obs_formatted['inat_username']} on {obs_formatted['date_observed']} in {obs_formatted['place_guess']}. See the full observation here: {obs_formatted['inat_uri']}"""
+    timeframe = 'hour'
+
+    tweet = f"""The Mushroom of the {timeframe.capitalize()} is this {obs_formatted['taxon_name']}{common_name}, observed by iNat user @/{obs_formatted['inat_username']} on {obs_formatted['date_observed']} in {obs_formatted['place_guess']}. See the full observation here: {obs_formatted['inat_uri']}"""
+
+    # dt_dow_map = {
+    #     6: 'Sunday',
+    #     0: 'Monday',
+    #     1: 'Tuesday',
+    #     2: 'Wednesday',
+    #     3: 'Thursday',
+    #     4: 'Friday',
+    #     5: 'Saturday'
+    # }
+
+    dt_now_pt = datetime.datetime.now(pytz.timezone('US/Pacific'))
+    dt_now_pt_weekday = dt_now_pt.weekday()
+
+    hashtags = ''
+    if dt_now_pt_weekday == 0:
+        hashtags = '\n#MushroomMonday #MycologyMonday'
+    if dt_now_pt_weekday == 4:
+        hashtags = '\n#FungusFriday'
+
+    tweet += hashtags
     return tweet
 
 
